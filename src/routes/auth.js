@@ -21,6 +21,9 @@ authRouter.post('/signup', validateSignup, async (req, res) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${req.protocol}://${req.get('host')}/auth/callback`
+      }
     });
 
     if (error) throw error;
@@ -52,3 +55,18 @@ authRouter.post('/login', async (req, res) => {
     res.status(401).json({ error: error.message });
   }
 });
+
+// Callback route for email confirmation
+authRouter.get('/callback', async (req, res) => {
+  try {
+    const { error } = await supabase.auth.exchangeCodeForSession(req.query.code);
+    
+    if (error) throw error;
+
+    res.redirect('/login');
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+export default authRouter;
